@@ -1,4 +1,4 @@
-import express from "express"
+import express , { type Express} from "express"
 import cors from "cors"
 import "./database/index.js"
 import cookieParser from "cookie-parser"
@@ -9,7 +9,7 @@ import { errorHandler } from "./middleware/errorMiddleware.js"
 
 const PORT = port ?? 8080
 
-export const app = express()
+export const app:Express = express()
 
 app.use(cors({ origin: corsUrl, optionsSuccessStatus: 200 }))
 

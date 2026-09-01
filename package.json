@@ -4,24 +4,33 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server",
-    "dev": "nodemon server"
+    "start": "node dist/server.js",
+    "dev": "tsc-watch --onSuccess \"node dist/server.js\"",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "bcryptjs": "^2.4.3",
+    "@types/bcryptjs": "^3.0.0",
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-async-handler": "^1.2.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.7.3"
+    "mongoose": "^8.7.3",
+    "tsc-watch": "^7.2.1",
+    "typescript": "^7.0.2"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^26.4.0",
     "nodemon": "^3.1.7"
   }
 }

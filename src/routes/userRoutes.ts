@@ -5,10 +5,10 @@ import {
   registerUser,
 } from "../controllers/userController.js"
 
-const router = express.Router()
+const router:any = express.Router()
 
 router.route("/login").post(loginUser)
 router.route("/register").post(registerUser)
 router.route("/logout").get(logoutUser)
 
-export default router
+export default router;
