@@ -11,7 +11,9 @@ export const db = {
   // port: process.env.DB_PORT || "",
   // user: process.env.DB_USER || "",
   db_uri:process.env.DB_URI,
-  password: process.env.DB_USER_PWD || "",
+  // password: process.env.DB_USER_PWD || "",
+  minPoolSize:parseInt(process.env.DB_MIN_POOL_SIZE ?? "5"),
+  maxPoolSize:parseInt(process.env.DB_MAX_POOL_SIZE ?? "10")
 }
 
 export const corsUrl = process.env.CORS_URL

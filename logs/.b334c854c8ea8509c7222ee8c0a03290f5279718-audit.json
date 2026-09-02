@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "D:\\backend_01\\Backend_with_microservices\\nodejs-backend-architecture-setup\\logs\\.b334c854c8ea8509c7222ee8c0a03290f5279718-audit.json",
+    "files": [
+        {
+            "date": 1788295908655,
+            "name": "D:\\backend_01\\Backend_with_microservices\\nodejs-backend-architecture-setup\\logs\\2026-09-02-results.log",
+            "hash": "fe514872da637fa3b62343559214fd13aaf41b4c94147d98493f4530594bbd9d"
+        },
+        {
+            "date": 1788375939722,
+            "name": "D:\\backend_01\\Backend_with_microservices\\nodejs-backend-architecture-setup\\logs\\2026-09-03-results.log",
+            "hash": "d6d744baaa2dd149e48b2a37fa6c8d00ea8bfdbda257a6de724640dd0db4ac3c"
+        }
+    ],
+    "hashType": "sha256"
+}

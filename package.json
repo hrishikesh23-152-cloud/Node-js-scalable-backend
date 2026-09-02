@@ -23,7 +23,9 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.7.3",
     "tsc-watch": "^7.2.1",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
