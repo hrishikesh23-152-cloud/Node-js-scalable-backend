@@ -6,10 +6,10 @@ import cookieParser from "cookie-parser"
 import userRoutes from "./routes/userRoutes.js"
 import { corsUrl, environment, port } from "./config.js"
 import todoRoutes from "./routes/todoRoutes.js"
-import { errorHandler } from "./middleware/errorMiddleware.js"
+import { errorHandler, notFound } from "./middleware/errorMiddleware.js"
 import logger from "./core/logger.js"
 import { ApiError, ErrorTypes } from "./core/ApiError.js"
-import { InternalError } from "./core/CustomError.js"
+// import { InternalError } from "./core/CustomError.js"
 
 const PORT = port ?? 4000
 
@@ -24,6 +24,7 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use("/api/users", userRoutes)
 app.use("/api/todo", todoRoutes)
+app.use(notFound)
 
 // app.use(errorHandler)
 app.use((err:Error,req:Request,_res:Response,next:NextFunction)=>{

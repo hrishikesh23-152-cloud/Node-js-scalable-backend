@@ -45,7 +45,7 @@ const registerUser:RequestHandler = asyncHandler(async (req, res) => {
     })
   } else {
     res.status(400)
-    throw new Error("Invalid User Credentials")
+    throw new BadRequestError("Invalid User Credentials")
   }
 })
 
