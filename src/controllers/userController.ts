@@ -3,6 +3,7 @@ import asyncHandler from "express-async-handler"
 import generateToken from "../utils/generateToken.js"
 import type { ProtectedRequest } from "../types/types.js";
 import type { Response,RequestHandler } from "express";
+import { BadRequestError } from "../core/CustomError.js";
 const loginUser:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
   const { email, password } = req.body
 
@@ -17,7 +18,7 @@ const loginUser:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:R
     })
   } else {
     res.status(401)
-    throw new Error(" Invalid email or password")
+    throw new BadRequestError(" Invalid email or password")
   }
 })
 
@@ -28,7 +29,7 @@ const registerUser:RequestHandler = asyncHandler(async (req, res) => {
 
   if (userExists) {
     res.status(400)
-    throw new Error("User already Exists")
+    throw new BadRequestError("User already Exists")
   }
 
   const user = await User.create({ name, email, password })
