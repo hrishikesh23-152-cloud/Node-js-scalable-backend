@@ -1,5 +1,6 @@
 import express from "express"
 import {
+  getAllUser,
   loginUser,
   logoutUser,
   registerUser,
@@ -9,6 +10,7 @@ import { userLoginSchema, userRegisterSchema } from "../validation/userSchema.js
 
 const router:any = express.Router()
 
+router.route('/datas').get(getAllUser)
 router.route("/login").post(validateRequest(userLoginSchema,ValidSource.BODY) , loginUser)
 router.route("/register").post( validateRequest(userRegisterSchema,ValidSource.BODY) , registerUser)
 router.route("/logout").get(logoutUser)

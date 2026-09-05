@@ -2,8 +2,8 @@ import User from "../models/userModel.js"
 import asyncHandler from "express-async-handler"
 import generateToken from "../utils/generateToken.js"
 import type { ProtectedRequest } from "../types/types.js";
-import type { Response,RequestHandler } from "express";
-import { BadRequestError } from "../core/CustomError.js";
+import type { Response,RequestHandler, NextFunction } from "express";
+import { BadRequestError, NotFoundError } from "../core/CustomError.js";
 const loginUser:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
   const { email, password } = req.body
 
@@ -49,6 +49,27 @@ const registerUser:RequestHandler = asyncHandler(async (req, res) => {
   }
 })
 
+const getAllUser:RequestHandler = asyncHandler(async (req,res) => {
+
+  const {page,limit} = req.query;
+  let skip = (Number(page)-1)*Number(limit);
+  const users = await User.find()
+                .skip(skip)
+                .limit(Number(limit))
+  const total = await User.countDocuments();
+  if(users){
+     res.status(200)
+    .json({
+      Data:users,
+      page:page,
+      remainingPage:Number(total/Number(limit))-Number(page),
+      totalPage:Number(total/Number(limit))
+    })
+  }
+  else{
+    throw new NotFoundError("Users record not found")
+  }
+})
 // const forgotPassword = asyncHandler(async (req, res) => {
 //   const { email } = req.body
 
@@ -133,4 +154,4 @@ const logoutUser:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:
   })
 })
 
-export { loginUser, registerUser, logoutUser }
+export { loginUser, registerUser, logoutUser,getAllUser }
