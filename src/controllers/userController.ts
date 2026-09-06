@@ -61,9 +61,9 @@ const getAllUser:RequestHandler = asyncHandler(async (req,res) => {
      res.status(200)
     .json({
       Data:users,
-      page:page,
-      remainingPage:Number(total/Number(limit))-Number(page),
-      totalPage:Number(total/Number(limit))
+      pageNo:page,
+      remainingPages:Number(total/Number(limit))-Number(page),
+      totalPages:Number(total/Number(limit))
     })
   }
   else{

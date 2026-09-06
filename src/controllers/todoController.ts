@@ -2,13 +2,14 @@ import asyncHandler from "express-async-handler"
 import Todo from "../models/todoModel.js"
 import type { ProtectedRequest } from "../types/types.js";
 import type { Response,RequestHandler } from "express";
+import { BadRequestError, NotFoundError } from "../core/CustomError.js";
 const createTodo:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
   const { title, description } = req.body
   console.log(req.user)
 
   if (!title || !description) {
     res.status(400)
-    throw new Error("Title and Description are required")
+    throw new BadRequestError("Title and Description are required")
   }
 
   await Todo.create({ user: req.user, title, description })
@@ -31,7 +32,7 @@ const editTodo:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Re
 
   if (!title || !description || !status) {
     res.status(400)
-    throw new Error("Title, Description, and Status are required")
+    throw new BadRequestError("Title, Description, and Status are required")
   }
 
   const todo = await Todo.findById(req.params.id)
@@ -44,8 +45,8 @@ const editTodo:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Re
   }
 
   if (!todo) {
-    res.status(404)
-    throw new Error("Todo not found")
+    res.status(204)
+    throw new NotFoundError("Todo not found")
   }
 
   todo.title = title
