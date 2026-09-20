@@ -1,32 +1,32 @@
-import jwt from "jsonwebtoken";
-import type { Request,Response,NextFunction } from "express";
-import asyncHandler from "express-async-handler"
-import User from "../models/userModel.js"
-import type {ProtectedRequest} from '../types/types.js'
+// import jwt from "jsonwebtoken";
+// import type { Request,Response,NextFunction } from "express";
+// import asyncHandler from "express-async-handler"
+// import User from "../models/userModel.js"
+// import type {ProtectedRequest} from '../types/types.js'
 
-export const protect:any = asyncHandler(async (req:ProtectedRequest, res:Response, next:NextFunction) => {
-  let token
+// export const protect:any = asyncHandler(async (req:ProtectedRequest, res:Response, next:NextFunction) => {
+//   let token
 
-  token = req.cookies.jwt
+//   token = req.cookies.jwt
 
-  if (token) {
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
-        userId:string
-      }
+//   if (token) {
+//     try {
+//       const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+//         userId:string
+//       }
 
-      req.user = await User.findById(decoded.userId).select("-password")
+//       req.user = await User.findById(decoded.userId).select("-password")
 
-      next()
-    } catch (error) {
-      console.error(error)
-      res.status(401)
-      throw new Error("Not authorized, token failed")
-    }
-  } else {
-    res.status(401)
-    throw new Error("Not authorized, no token")
-  }
-})
+//       next()
+//     } catch (error) {
+//       console.error(error)
+//       res.status(401)
+//       throw new Error("Not authorized, token failed")
+//     }
+//   } else {
+//     res.status(401)
+//     throw new Error("Not authorized, no token")
+//   }
+// })
 
 

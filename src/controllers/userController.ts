@@ -4,12 +4,38 @@ import generateToken from "../utils/generateToken.js"
 import type { ProtectedRequest } from "../types/types.js";
 import type { Response,RequestHandler, NextFunction } from "express";
 import { BadRequestError, NotFoundError } from "../core/CustomError.js";
+import crypto from "crypto"
+import { create } from "./Keystorecontroller.js";
+import { createTokens, getAccessToken, validateTokenData } from "../auth/utils.js";
+import { environment, tokenInfo } from "../config.js";
+import type { PublicRequest } from "../types/apiReq.js";
+import jwt from "../core/jwt.js";
+import { validate } from "zod";
+import { Types } from "mongoose";
+import { KeyModel } from "../models/KeyStoremodel.js";
+
 const loginUser:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
   const { email, password } = req.body
 
   const user = await User.findOne({ email })
   if (user && (await user?.matchPassword(password))) {
-    generateToken(res, user._id)
+    const accessTokenKey = crypto.randomBytes(64).toString("hex");
+    const refreshTokenKey = crypto.randomBytes(64).toString("hex")
+    await create(user,accessTokenKey,refreshTokenKey)
+    const tokens = await createTokens(user,accessTokenKey,refreshTokenKey);
+
+    res.cookie("accessToken",tokens.accessToken,{
+      httpOnly:true,
+      secure: environment === "production",
+      sameSite:"strict",
+      maxAge:24*60*60*1000 
+    })
+     res.cookie("refreshToken",tokens.refreshToken,{
+      httpOnly:true,
+      secure: environment === "production",
+      sameSite:"strict",
+      maxAge:30*24*60*60*1000 
+    })
     res.json({
       _id: user._id,
       name: user.name,
@@ -70,6 +96,55 @@ const getAllUser:RequestHandler = asyncHandler(async (req,res) => {
     throw new NotFoundError("Users record not found")
   }
 })
+
+export const refreshAccessToken = async (req:PublicRequest,_res:Response,next:NextFunction)=>{
+  req.accessToken = getAccessToken(req.headers.authorization);
+
+  const accesspayload = await jwt.decode(req.accessToken)
+  validateTokenData(accesspayload);
+
+  const user = await User.findOne(new Types.ObjectId(accesspayload.sub));
+  if(!user){
+    throw new BadRequestError("User not registered")
+  }
+  req.user = user ;
+  const refreshTokenPayload = await jwt.validate(
+    req.body.refreshToken , tokenInfo.token_secret
+  );
+  validateTokenData(refreshTokenPayload);
+  if(accesspayload.sub !== refreshTokenPayload.sub){
+    throw new BadRequestError("Invalid access token")
+  }
+  const KeyStore = await KeyModel.findOne({
+    client:req.user,
+    primaryKey:accesspayload.prm,
+    secondaryKey:refreshTokenPayload.prm
+  })
+
+  if(!KeyStore){
+    throw new BadRequestError("Invalid accessToken")
+  }
+  await KeyModel.deleteOne({
+    client:req.user,
+    primaryKey:accesspayload.prm,
+    secondaryKey:refreshTokenPayload.prm
+  })
+   const accessTokenKey = crypto.randomBytes(64).toString("hex");
+    const refreshTokenKey = crypto.randomBytes(64).toString("hex")
+
+     await create(user,accessTokenKey,refreshTokenKey)
+    const tokens = await createTokens(user,accessTokenKey,refreshTokenKey);
+
+    _res.cookie("accessToken",tokens.accessToken,{
+      httpOnly:true,
+      secure: environment === "production",
+      sameSite:"strict",
+      maxAge:24*60*60*1000 
+    })
+    return _res.status(200).json({
+      mesage:"Access Token Refreshed"
+    })
+}
 // const forgotPassword = asyncHandler(async (req, res) => {
 //   const { email } = req.body
 
