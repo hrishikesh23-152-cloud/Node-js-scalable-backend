@@ -13,7 +13,8 @@ import jwt from "../core/jwt.js";
 import { validate } from "zod";
 import { Types } from "mongoose";
 import { KeyModel } from "../models/KeyStoremodel.js";
-
+import { getRole } from "./rolecontroller.js";
+import { RoleCode } from "../models/rolemodel.js";
 const loginUser:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
   const { email, password } = req.body
 
@@ -57,8 +58,9 @@ const registerUser:RequestHandler = asyncHandler(async (req, res) => {
     res.status(400)
     throw new BadRequestError("User already Exists")
   }
-
-  const user = await User.create({ name, email, password })
+  const roleA = await getRole(RoleCode.USER)
+  console.log(roleA)
+  const user = await User.create({ name, email, password,roles:[roleA] })
 
   if (user) {
     generateToken(res, user._id)
@@ -67,6 +69,7 @@ const registerUser:RequestHandler = asyncHandler(async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      roles:roleA
        
     })
   } else {
@@ -98,7 +101,7 @@ const getAllUser:RequestHandler = asyncHandler(async (req,res) => {
 })
 
 export const refreshAccessToken = async (req:PublicRequest,_res:Response,next:NextFunction)=>{
-  req.accessToken = getAccessToken(req.headers.authorization);
+  req.accessToken =String(req.cookies.accessToken)
 
   const accesspayload = await jwt.decode(req.accessToken)
   validateTokenData(accesspayload);

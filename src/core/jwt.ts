@@ -68,13 +68,15 @@ async function validate(token:string,secret:string):Promise<JwtPayload>{
     }
     try {
         return new Promise((resolve,reject)=>{
+           
             verify(token,secret,(error,decoded)=>{
                 if(error){
                     if(error.name==="TokenExpiredError"){
-                    return reject(new BadTokenError())
+                    return reject(new BadTokenError("Token expired"))
                     }
-                    return reject(new BadTokenError())
+                    return reject(new BadTokenError(error.message))
                 }
+                
                 resolve(decoded as JwtPayload)
             })
         })

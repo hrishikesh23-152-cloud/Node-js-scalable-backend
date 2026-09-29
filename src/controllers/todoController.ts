@@ -22,7 +22,10 @@ const getTodos:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Re
   const todos = await Todo.find({
     user: user,
   })
-  res.json(todos)
+  console.log(todos)
+   res.status(200).json({
+    Data:todos
+  })
 })
 
 const editTodo:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
@@ -66,7 +69,7 @@ const deleteTodo:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:
     res.json({ message: "Todo removed" })
   } else {
     res.status(404)
-    throw new Error("Todo not found")
+    throw new BadRequestError("Todo not found")
   }
 })
 

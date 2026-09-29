@@ -10,12 +10,15 @@ import apiKey from "../auth/apiKey.js"
 import authMiddleware from "../auth/authentication.js"
 import { Permissions } from "../models/ApiKeymode.js"
 import { permission1 } from "../middleware/permission.js"
-
+import role from "../middleware/role.js"
+import { RoleCode } from "../models/rolemodel.js"
+import authorization from "../auth/authorization.js"
 
 const router:Router = express.Router()
 router.use(apiKey);
 router.use(permission1(Permissions.GENERAL))
-router.route("/").post(authMiddleware, createTodo).get(authMiddleware, getTodos)
-router.route("/:id").put(authMiddleware, editTodo).delete(authMiddleware, deleteTodo)
+router.use(authMiddleware)
+router.route("/").post(role(RoleCode.ADMIN),authorization , createTodo).get(role(RoleCode.USER) , authorization, getTodos)
+router.route("/:id").put( editTodo).delete( deleteTodo)
 
 export default router
