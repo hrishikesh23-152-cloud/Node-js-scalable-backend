@@ -24,14 +24,14 @@ export default router.use(
         }
         let authorized = false;
         for(const userRole of req.user.roles){
-            console.log(userRole)
+            // console.log(userRole)
             if(authorized){
                 break;
             }
             for(const role of roles){
              
               if (role._id.equals(userRole)) {
-                console.log(userRole);
+                // console.log(userRole);
                 authorized = true;
                 break;
             }

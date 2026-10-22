@@ -65,6 +65,6 @@ export const validateTokenData = (payload: JwtPayload): boolean => {
   ) {
     throw new BadRequestError("Invalid access/refresh token")
   }
-  console.log("-->")
+ 
   return true
 }

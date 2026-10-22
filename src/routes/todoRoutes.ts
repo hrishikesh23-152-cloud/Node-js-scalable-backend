@@ -18,7 +18,7 @@ const router:Router = express.Router()
 router.use(apiKey);
 router.use(permission1(Permissions.GENERAL))
 router.use(authMiddleware)
-router.route("/").post(role(RoleCode.ADMIN),authorization , createTodo).get(role(RoleCode.USER) , authorization, getTodos)
+router.route("/").post(role(RoleCode.USER),authorization , createTodo).get(role(RoleCode.USER) , authorization, getTodos)
 router.route("/:id").put( editTodo).delete( deleteTodo)
 
 export default router

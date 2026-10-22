@@ -1,5 +1,5 @@
 import mongoose, { mongo } from "mongoose"
-import { db } from "../config.js"
+import { db, environment } from "../config.js"
 import logger from "../core/logger.js";
 
 const dbURI = String(db.db_uri);
@@ -21,7 +21,8 @@ function setRunValidators(){
 
 mongoose.set("strictPopulate",true);
 
-mongoose
+if(environment !== "test"){
+  mongoose
 .plugin((schema:any)=>{
   schema.pre("findOneAndUpdate",setRunValidators)
   schema.pre("updateMany",setRunValidators)
@@ -35,6 +36,7 @@ mongoose
   logger.error(err)
 }
 )
+}
 
 mongoose.connection.on("connected",()=>{
   logger.debug("Mongodb connected")

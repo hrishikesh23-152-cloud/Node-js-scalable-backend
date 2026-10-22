@@ -1,6 +1,6 @@
 import User from "../models/userModel.js"
 import asyncHandler from "express-async-handler"
-import generateToken from "../utils/generateToken.js"
+// import generateToken from "../utils/generateToken.js"
 import type { ProtectedRequest } from "../types/types.js";
 import type { Response,RequestHandler, NextFunction } from "express";
 import { BadRequestError, NotFoundError } from "../core/CustomError.js";
@@ -49,34 +49,64 @@ const loginUser:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:R
   }
 })
 
-const registerUser:RequestHandler = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body
 
-  const userExists = await User.findOne({ email })
+const registerUser: RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
+    const { name, email, password } = req.body;
 
-  if (userExists) {
-    res.status(400)
-    throw new BadRequestError("User already Exists")
-  }
-  const roleA = await getRole(RoleCode.USER)
-  console.log(roleA)
-  const user = await User.create({ name, email, password,roles:[roleA] })
+    const userExists = await User.findOne({ email });
 
-  if (user) {
-    generateToken(res, user._id)
-    res.status(201)
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      roles:roleA
-       
-    })
-  } else {
-    res.status(400)
-    throw new BadRequestError("Invalid User Credentials")
-  }
-})
+    if (userExists) {
+        res.status(400);
+        throw new BadRequestError("User already Exists");
+    }
+
+    const roleA = await getRole(RoleCode.USER);
+
+    const user = await User.create({
+        name,
+        email,
+        password,
+        roles: [roleA],
+    });
+
+    if (!user) {
+        res.status(400);
+        throw new BadRequestError("Invalid User Credentials");
+    }
+
+    const accessTokenKey = crypto.randomBytes(64).toString("hex");
+    const refreshTokenKey = crypto.randomBytes(64).toString("hex");
+
+    await create(user, accessTokenKey, refreshTokenKey);
+
+    const tokens = await createTokens(
+        user,
+        accessTokenKey,
+        refreshTokenKey
+    );
+
+    res.cookie("accessToken", tokens.accessToken, {
+        httpOnly: true,
+        secure: environment === "production",
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", tokens.refreshToken, {
+        httpOnly: true,
+        secure: environment === "production",
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+     res.status(201).json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        roles: [roleA],
+    });
+});
+
 
 const getAllUser:RequestHandler = asyncHandler(async (req,res) => {
 
