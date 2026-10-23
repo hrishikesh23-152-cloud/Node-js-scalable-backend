@@ -4,7 +4,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node dist/src/server.js",
+    "start": "node --watch dist/src/server.js",
     "test": "cross-env NODE_ENV=test vitest --run",
     "dev": "tsc-watch --onSuccess \"node dist/server.js\"",
     "build": "tsc",
@@ -24,6 +24,7 @@
     "express-async-handler": "^1.2.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.7.3",
+    "npm-watch": "^0.13.0",
     "tsc-watch": "^7.2.1",
     "typescript": "^7.0.2",
     "winston": "^3.19.0",
