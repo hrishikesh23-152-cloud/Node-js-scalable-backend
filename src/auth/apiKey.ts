@@ -12,12 +12,13 @@ const router:Router = express.Router();
 export default router.use(validateRequest(Schema.apiKey,ValidSource.HEADER),
  async (req:APIRequest,res:Response,next:NextFunction)=>{
     const key = req.headers[Header.API_KEY]?.toString();
+    console.log("apiKey",key)
     if(!key){
-        next(new ForbiddenError())
+        return next(new ForbiddenError())
     }
     const apiKey = await FindApiByKey(String(key));
     if(!apiKey){
-        next(new ForbiddenError());
+        return next(new ForbiddenError());
     }
     req.apiKey = apiKey;
     return next();

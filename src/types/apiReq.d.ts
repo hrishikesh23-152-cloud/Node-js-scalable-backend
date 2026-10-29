@@ -13,6 +13,6 @@ export declare interface PublicRequest extends Request{
     keystore:KeyStoreDoc;
 }
 
-declare interface RoleRequest extends PublicRequest{
+export declare interface RoleRequest extends PublicRequest{
     presentRoleCodes:RoleCode[]
 }

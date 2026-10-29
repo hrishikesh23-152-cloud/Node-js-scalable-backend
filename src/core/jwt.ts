@@ -62,28 +62,40 @@ async function decode(token:string):Promise<JwtPayload>{
         throw new BadTokenError()
     }
 }
-async function validate(token:string,secret:string):Promise<JwtPayload>{
-    if(!token){
-        throw new InternalError("Token validation failure")
-    }
-    try {
-        return new Promise((resolve,reject)=>{
-           
-            verify(token,secret,(error,decoded)=>{
-                if(error){
-                    if(error.name==="TokenExpiredError"){
-                    return reject(new BadTokenError("Token expired"))
-                    }
-                    return reject(new BadTokenError(error.message))
-                }
-                
-                resolve(decoded as JwtPayload)
-            })
-        })
-    } catch (error) {
-        throw new InternalError('Token validation failure')
-    }
+
+function validate(token: string, secret: string): Promise<JwtPayload> {
+  if (!token || !secret) {
+    return Promise.reject(
+      new InternalError("Token or secret is missing")
+    );
+  }
+
+  return new Promise((resolve, reject) => {
+    verify(
+      token,
+      secret,
+      { algorithms: ["HS256"] },
+      (error, decoded) => {
+        if (error) {
+          return reject(
+            new BadTokenError(
+              error.name === "TokenExpiredError"
+                ? "Token expired"
+                : "Invalid token"
+            )
+          );
+        }
+
+        if (!decoded || typeof decoded === "string") {
+          return reject(new BadTokenError("Invalid token payload"));
+        }
+
+        resolve(decoded as JwtPayload);
+      }
+    );
+  });
 }
+
 export default {
   encode,
   decode,

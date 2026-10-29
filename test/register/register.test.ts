@@ -41,6 +41,18 @@ afterAll(async () => {
 describe("Tests the register functionality", () => {
     const endpoint = "/api/users/register";
 
+    it("rejects unauthenticated requests to the todo endpoint", async () => {
+        await request(app)
+            .get("/api/todo")
+            .expect(401);
+    });
+
+    it("rejects unauthenticated requests to the logout endpoint", async () => {
+        await request(app)
+            .get("/api/users/logout")
+            .expect(401);
+    });
+
     const userPayload = {
         name: "john",
         email: "john@gmail.com",
@@ -114,7 +126,6 @@ describe("Tests the register functionality", () => {
                 password: "cookie2027",
             })
             .expect(201);
-            console.log("Set-Cookie:", res.headers["set-cookie"]);
         expect(res.headers["set-cookie"]).toBeDefined();
 
         const cookies: string[] = Array.isArray(
@@ -165,13 +176,13 @@ describe("Tests the register functionality", () => {
         expect(accessTokenCookie).toBeDefined();
         expect(refreshTokenCookie).toBeDefined();
 
-        const accessToken = String(accessTokenCookie)?.split(";")[0]?.split("=")[1]; 
-            // .split(";")[0]
-            // .split("=")[1];
+        const accessToken = String(accessTokenCookie)?.split(";")[0]?.split("=")[1];
+        // .split(";")[0]
+        // .split("=")[1];
 
-        const refreshToken = String(refreshTokenCookie)?.split(";")[0]?.split("=")[1]; 
-            // .split(";")[0]
-            // .split("=")[1];
+        const refreshToken = String(refreshTokenCookie)?.split(";")[0]?.split("=")[1];
+        // .split(";")[0]
+        // .split("=")[1];
 
         const decodedAccessToken = await JWT.decode(String(accessToken));
         const decodedRefreshToken = await JWT.decode(String(refreshToken));

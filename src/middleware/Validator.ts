@@ -14,7 +14,7 @@ export enum ValidSource {
 export const validateRequest = (schema:ZodSchema,source:ValidSource = ValidSource.BODY) => {
     return (req:Request,_res:Response,next:NextFunction)=>{
         try {
-            // logger.info(req[source],source)
+            logger.info(req[source],source)
             const data = schema.parse(req[source])
             Object.assign(req[source],data);
             next();

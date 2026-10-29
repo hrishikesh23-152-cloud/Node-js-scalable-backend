@@ -29,12 +29,14 @@ const loginUser:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:R
       httpOnly:true,
       secure: environment === "production",
       sameSite:"strict",
+      path: "/",
       maxAge:24*60*60*1000 
     })
      res.cookie("refreshToken",tokens.refreshToken,{
       httpOnly:true,
       secure: environment === "production",
       sameSite:"strict",
+      path: "/",
       maxAge:30*24*60*60*1000 
     })
     res.json({
@@ -51,7 +53,7 @@ const loginUser:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:R
 
 
 const registerUser: RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
-    const { name, email, password } = req.body;
+    const { name, email, password, role: requestedRole, roles: requestedRoles } = req.body;
 
     const userExists = await User.findOne({ email });
 
@@ -60,13 +62,31 @@ const registerUser: RequestHandler = asyncHandler(async (req:ProtectedRequest, r
         throw new BadRequestError("User already Exists");
     }
 
-    const roleA = await getRole(RoleCode.USER);
+    let userRoles: Types.ObjectId[] = [];
+    if (requestedRole && Object.values(RoleCode).includes(requestedRole)) {
+      const r = await getRole(requestedRole as RoleCode);
+      if (r) userRoles.push(r);
+    } else if (Array.isArray(requestedRoles) && requestedRoles.length > 0) {
+      for (const r of requestedRoles) {
+        if (typeof r === "string" && Object.values(RoleCode).includes(r as RoleCode)) {
+          const roleDoc = await getRole(r as RoleCode);
+          if (roleDoc) userRoles.push(roleDoc);
+        } else if (Types.ObjectId.isValid(r)) {
+          userRoles.push(new Types.ObjectId(r));
+        }
+      }
+    }
+
+    if (userRoles.length === 0) {
+      const defaultRole = await getRole(RoleCode.USER);
+      if (defaultRole) userRoles.push(defaultRole);
+    }
 
     const user = await User.create({
         name,
         email,
         password,
-        roles: [roleA],
+        roles: userRoles,
     });
 
     if (!user) {
@@ -89,6 +109,7 @@ const registerUser: RequestHandler = asyncHandler(async (req:ProtectedRequest, r
         httpOnly: true,
         secure: environment === "production",
         sameSite: "strict",
+        path: "/",
         maxAge: 24 * 60 * 60 * 1000,
     });
 
@@ -96,6 +117,7 @@ const registerUser: RequestHandler = asyncHandler(async (req:ProtectedRequest, r
         httpOnly: true,
         secure: environment === "production",
         sameSite: "strict",
+        path: "/",
         maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
@@ -103,26 +125,29 @@ const registerUser: RequestHandler = asyncHandler(async (req:ProtectedRequest, r
         _id: user._id,
         name: user.name,
         email: user.email,
-        roles: [roleA],
+        roles: user.roles,
     });
 });
 
 
 const getAllUser:RequestHandler = asyncHandler(async (req,res) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.max(1, Number(req.query.limit) || 10);
+  const skip = (page - 1) * limit;
 
-  const {page,limit} = req.query;
-  let skip = (Number(page)-1)*Number(limit);
   const users = await User.find()
+                .select("-password")
                 .skip(skip)
-                .limit(Number(limit))
+                .limit(limit);
   const total = await User.countDocuments();
   if(users){
-     res.status(200)
+    const totalPages = Math.ceil(total / limit);
+    res.status(200)
     .json({
       Data:users,
       pageNo:page,
-      remainingPages:Number(total/Number(limit))-Number(page),
-      totalPages:Number(total/Number(limit))
+      remainingPages: Math.max(0, totalPages - page),
+      totalPages: totalPages
     })
   }
   else{
@@ -130,17 +155,18 @@ const getAllUser:RequestHandler = asyncHandler(async (req,res) => {
   }
 })
 
-export const refreshAccessToken = async (req:PublicRequest,_res:Response,next:NextFunction)=>{
-  req.accessToken =String(req.cookies.accessToken)
+export const refreshAccessToken: RequestHandler = async (req, _res, next) => {
+  const publicReq = req as PublicRequest;
+  publicReq.accessToken = String(req.cookies?.accessToken);
 
-  const accesspayload = await jwt.decode(req.accessToken)
+  const accesspayload = await jwt.decode(publicReq.accessToken);
   validateTokenData(accesspayload);
 
   const user = await User.findOne(new Types.ObjectId(accesspayload.sub));
-  if(!user){
-    throw new BadRequestError("User not registered")
+  if (!user) {
+    throw new BadRequestError("User not registered");
   }
-  req.user = user ;
+  publicReq.user = user;
   const refreshTokenPayload = await jwt.validate(
     req.body.refreshToken , tokenInfo.token_secret
   );
@@ -149,19 +175,19 @@ export const refreshAccessToken = async (req:PublicRequest,_res:Response,next:Ne
     throw new BadRequestError("Invalid access token")
   }
   const KeyStore = await KeyModel.findOne({
-    client:req.user,
-    primaryKey:accesspayload.prm,
-    secondaryKey:refreshTokenPayload.prm
-  })
+    client: user._id,
+    primaryKey: accesspayload.prm,
+    secondaryKey: refreshTokenPayload.prm,
+  });
 
-  if(!KeyStore){
-    throw new BadRequestError("Invalid accessToken")
+  if (!KeyStore) {
+    throw new BadRequestError("Invalid accessToken");
   }
   await KeyModel.deleteOne({
-    client:req.user,
-    primaryKey:accesspayload.prm,
-    secondaryKey:refreshTokenPayload.prm
-  })
+    client: user._id,
+    primaryKey: accesspayload.prm,
+    secondaryKey: refreshTokenPayload.prm,
+  });
    const accessTokenKey = crypto.randomBytes(64).toString("hex");
     const refreshTokenKey = crypto.randomBytes(64).toString("hex")
 
@@ -252,14 +278,35 @@ export const refreshAccessToken = async (req:PublicRequest,_res:Response,next:Ne
 //   })
 // })
 
-const logoutUser:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
-  res.cookie("jwt", "", {
-    httpOnly: true,
-    expires: new Date(0),
-  })
-  res.status(200).json({
-    message: "Logged Out Successfully",
-  })
-})
+const logoutUser: RequestHandler = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const authReq = req as PublicRequest;
+    if (authReq.keystore?._id) {
+      await KeyModel.deleteOne({ _id: authReq.keystore._id });
+    }
 
-export { loginUser, registerUser, logoutUser,getAllUser }
+    const isProduction = environment === "production";
+
+    for (const path of ["/", "/api/users"]) {
+      res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: "strict",
+        path,
+      });
+
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: "strict",
+        path,
+      });
+    }
+
+    res.status(200).json({
+      message: "Logged Out Successfully",
+    });
+  }
+);
+
+export { loginUser, registerUser, logoutUser, getAllUser };

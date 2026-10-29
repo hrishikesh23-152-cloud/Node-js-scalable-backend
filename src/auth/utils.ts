@@ -51,20 +51,20 @@ export const getAccessToken = (authorization?: string):string => {
   return String(authorization.split(" ")[1]) 
 }
 
+
 export const validateTokenData = (payload: JwtPayload): boolean => {
-  console.log("🚀 ~ validateTokenData ~ payload:", payload)
   if (
     !payload ||
-    !payload.iss ||
-    !payload.aud ||
-    !payload.sub ||
-    !payload.prm ||
+    typeof payload.iss !== "string" ||
+    typeof payload.aud !== "string" ||
+    typeof payload.sub !== "string" ||
+    typeof payload.prm !== "string" ||
     payload.iss !== tokenInfo.token_issuer ||
-    payload.aud !== tokenInfo.token_audience||
+    payload.aud !== tokenInfo.token_audience ||
     !Types.ObjectId.isValid(payload.sub)
   ) {
-    throw new BadRequestError("Invalid access/refresh token")
+    throw new BadRequestError("Invalid token claims");
   }
- 
-  return true
-}
+
+  return true;
+};

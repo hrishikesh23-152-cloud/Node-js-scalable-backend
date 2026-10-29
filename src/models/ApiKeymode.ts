@@ -46,4 +46,4 @@ const schema = new Schema<ApiKeyDoc>({
 
 schema.index({key:1,status:1})
 
-export const ApiKeyModel:Model<ApiKeyDoc> = mongoose.model<ApiKeyDoc>(" ApiKeyModel",schema)
+export const ApiKeyModel:Model<ApiKeyDoc> = mongoose.model<ApiKeyDoc>("ApiKeyModel",schema)

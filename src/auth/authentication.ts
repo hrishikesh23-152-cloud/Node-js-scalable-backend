@@ -1,49 +1,90 @@
-import express, { type NextFunction } from 'express';
-import { ZodSchema } from 'zod/v3';
-import Schema from './schema.js'
-import {ValidSource,validateRequest} from '../middleware/Validator.js';
-import { getAccessToken, validateTokenData } from './utils.js';
-import type { PublicRequest } from '../types/apiReq.js';
-import jwt from '../core/jwt.js';
-import {tokenInfo} from  '../config.js'
-import User, { type UserDoc } from '../models/userModel.js';
-import { Types } from 'mongoose';
-import { BadRequestError,ToeknExpiredError } from '../core/CustomError.js';
-import { KeyModel } from '../models/KeyStoremodel.js';
 
-const router:any = express.Router();
+import type { RequestHandler } from "express";
+import { Types } from "mongoose";
+import { tokenInfo } from "../config.js";
+import { UnauthorizedError } from "../core/CustomError.js";
+import jwt from "../core/jwt.js";
+import User from "../models/userModel.js";
+import { KeyModel } from "../models/KeyStoremodel.js";
+import type { PublicRequest } from "../types/apiReq.js";
+import { validateTokenData } from "./utils.js";
+import logger from "../core/logger.js";
 
-// ... imports
-export default router.use(async (req: PublicRequest, _res: Response, next: NextFunction) => {
-    try {
-        req.accessToken = String(req.cookies.accessToken);
-        const payload = await jwt.validate(req.accessToken, tokenInfo.token_secret);
-        validateTokenData(payload);
+const authMiddleware: RequestHandler = async (req, _res, next) => {
+  const authReq = req as PublicRequest;
 
-        const user: any = await User.findById(new Types.ObjectId(payload.sub));
-        if (!user) {
-            throw new BadRequestError("User doesn't exist");
-        }
-        req.user = user;
+  console.log("[AUTH]", req.method, req.originalUrl);
+  logger.info(`[AUTH] Middleware called for ${req.method} ${req.originalUrl}`);
 
-        // Use findOne instead of find
-        const keyStore = await KeyModel.findOne({
-            client: req.user._id,
-            primaryKey: payload.prm,
-            status: true 
-        });
-        
-        if (!keyStore) {
-            throw new BadRequestError("Invalid or wrong access token");
-        }
-        
-        return next();
-    } catch (error) {
-        // Pass through custom operational errors, otherwise handle token issues
-        if (error instanceof BadRequestError) {
-            throw error;
-        }
-        throw new ToeknExpiredError(); // Adjust to your actual class name spelling
+  const authHeader = req.get("authorization")?.trim();
+  let bearerToken: string | undefined;
+  if (authHeader) {
+    const match = /^Bearer\s+(\S+)$/i.exec(authHeader);
+    if (match?.[1]) {
+      bearerToken = match[1];
+    } else if (!authHeader.includes(" ")) {
+      bearerToken = authHeader;
     }
-});
+  }
 
+  const accessToken = bearerToken ?? authReq.cookies?.accessToken;
+
+  if (!accessToken) {
+    logger.warn(`[AUTH] Missing access token for ${req.method} ${req.originalUrl}`);
+    return next(
+      new UnauthorizedError("Access token is missing")
+    );
+  }
+
+  authReq.accessToken = accessToken;
+
+  try {
+    const payload = await jwt.validate(
+      accessToken,
+      tokenInfo.token_secret
+    );
+
+    validateTokenData(payload);
+
+    if (!Types.ObjectId.isValid(payload.sub)) {
+      return next(new UnauthorizedError("Invalid token subject"));
+    }
+
+    const user = await User.findById(payload.sub);
+
+    if (!user) {
+      return next(new UnauthorizedError("User doesn't exist"));
+    }
+
+    const keyStore = await KeyModel.findOne({
+      client: user._id,
+      primaryKey: payload.prm,
+      status: true,
+    });
+
+    if (!keyStore) {
+      return next(
+        new UnauthorizedError("Invalid or revoked access token")
+      );
+    }
+
+    authReq.user = user;
+    (req as any).user = user;
+    authReq.keystore = keyStore;
+
+    return next();
+  } catch (error) {
+    console.error(
+      "[AUTH FAILURE]",
+      error instanceof Error ? error.message : error
+    );
+
+    if (error instanceof UnauthorizedError) {
+      return next(error);
+    }
+
+    return next(new UnauthorizedError("Invalid access token"));
+  }
+};
+
+export default authMiddleware;
