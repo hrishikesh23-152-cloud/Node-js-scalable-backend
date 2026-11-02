@@ -1,4 +1,5 @@
 import dotenv from "dotenv"
+// import { exitOnError } from "winston"
 
 dotenv.config()
 
@@ -23,3 +24,12 @@ export const tokenInfo = {
 }
 
 export const corsUrl = process.env.CORS_URL
+
+export const redisConfig = {
+  redis_host:process.env.REDIS_HOST,
+  redis_port:Number(process.env.REDIS_PORT),
+  redis_password:process.env.REDIS_PASSWORD
+}
+export const cacheConfig = {
+  cache_ttl:process.env.CACHING_TTL
+}

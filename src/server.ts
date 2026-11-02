@@ -1,6 +1,7 @@
 import express , { type Express } from "express"
 import cors from "cors"
 import "./database/index.js"
+import "./cache/index.js"
 import cookieParser from "cookie-parser"
 import userRoutes from "./routes/userRoutes.js"
 import { corsUrl, port } from "./config.js"

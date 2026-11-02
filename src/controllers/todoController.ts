@@ -1,8 +1,10 @@
 import asyncHandler from "express-async-handler"
-import Todo from "../models/todoModel.js"
+import Todo, { type TodoDoc } from "../models/todoModel.js"
 import type { ProtectedRequest } from "../types/types.js";
 import type { Response,RequestHandler } from "express";
 import { BadRequestError, ForbiddenError, NotFoundError } from "../core/CustomError.js";
+import todocache from "../cache/todocache.js";
+import logger from "../core/logger.js";
 const createTodo:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
   const { title, description } = req.body
 
@@ -12,20 +14,68 @@ const createTodo:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:
   }
 
   const userId = req.user?._id || req.user;
+  await todocache.invalidTodos(String(req.user?._id));
+  logger.info("todos deleted from cache..")
   await Todo.create({ user: userId, title, description })
+  
 
   res.status(201).json({ title, description })
 })
 
-const getTodos:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
-  const userId = req.user?._id || req.user;
-  const todos = await Todo.find({
-    user: userId,
-  })
-  res.status(200).json({
-    Data:todos
-  })
-})
+
+const getTodos: RequestHandler = asyncHandler(
+  async (req: ProtectedRequest, res: Response): Promise<void> => {
+
+    const userId = String(req.user?._id);
+
+    // 1. Check Redis cache
+    logger.info("Trying to fetch data from cache...");
+
+    const cachedTodos = await todocache.fetchUserTodos(userId);
+
+    // 2. Cache hit
+    if (cachedTodos && cachedTodos.length > 0) {
+      logger.info("Successfully fetched todos from cache");
+
+      res.status(200).json({
+        data: cachedTodos
+      });
+
+      return;
+    }
+
+    // 3. Cache miss: Fetch from MongoDB
+    logger.info("Fetching todos from database instead of cache...");
+
+    const todos = await Todo.find({
+      user: userId
+    });
+
+    // 4. Check if todos exist
+    if (todos.length === 0) {
+      res.status(404).json({
+        message: "No todos found"
+      });
+
+      return;
+    }
+
+    // 5. Save data in Redis
+    logger.info("Trying to save todos in cache...");
+
+    await todocache.saveUserTodos(userId, todos);
+
+    logger.info("Successfully saved todos to cache");
+
+    // 6. Return database results
+    res.status(200).json({
+      data: todos
+    });
+
+    return;
+  }
+);
+
 
 const editTodo:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
   const { title, description, status } = req.body
@@ -54,7 +104,7 @@ const editTodo:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Re
   todo.status = status
 
   const updatedTodo = await todo.save()
-
+    await todocache.invalidTodos(String(req.user?._id));
   res.json(updatedTodo)
 })
 
@@ -72,7 +122,9 @@ const deleteTodo:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:
   }
 
   await todo.deleteOne();
-  res.json({ message: "Todo removed" })
+    await todocache.invalidTodos(String(req.user?._id));
+  res.status(200)
+  .json({ message: "Todo removed" })
 })
 
 export { createTodo, getTodos, editTodo, deleteTodo }
