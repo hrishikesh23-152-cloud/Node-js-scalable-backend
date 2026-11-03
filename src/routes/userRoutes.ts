@@ -28,7 +28,7 @@ router.use(authMiddleware)
 router.route("/logout").get(logoutUser).post(logoutUser)
 
 // Admin-only route to get all users
-router.route("/datas").get(role(RoleCode.ADMIN), authorization, getAllUser)
+router.route("/datas").get(role(RoleCode.USER), authorization, getAllUser)
 // router.route("/all").get(role(RoleCode.ADMIN), authorization, getAllUser)
 // router.route("/getalluser").get(role(RoleCode.ADMIN), authorization, getAllUser)
 // router.route("/").get(role(RoleCode.ADMIN), authorization, getAllUser)

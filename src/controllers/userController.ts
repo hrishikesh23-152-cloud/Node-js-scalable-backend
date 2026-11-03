@@ -15,6 +15,8 @@ import { Types } from "mongoose";
 import { KeyModel } from "../models/KeyStoremodel.js";
 import { getRole } from "./rolecontroller.js";
 import { RoleCode } from "../models/rolemodel.js";
+import usercache from "../cache/usercache.js";
+import logger from "../core/logger.js";
 const loginUser:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:Response) => {
   const { email, password } = req.body
 
@@ -94,6 +96,12 @@ const registerUser: RequestHandler = asyncHandler(async (req:ProtectedRequest, r
         throw new BadRequestError("Invalid User Credentials");
     }
 
+    try {
+        await usercache.invalidateUsers();
+    } catch (error) {
+        logger.warn("Failed to invalidate user-list cache after registration", error);
+    }
+
     const accessTokenKey = crypto.randomBytes(64).toString("hex");
     const refreshTokenKey = crypto.randomBytes(64).toString("hex");
 
@@ -135,6 +143,20 @@ const getAllUser:RequestHandler = asyncHandler(async (req,res) => {
   const limit = Math.max(1, Number(req.query.limit) || 10);
   const skip = (page - 1) * limit;
 
+  const cacheVersion = await usercache.getUserListVersion();
+  const cachedUsers = await usercache.fetchUsers(page, limit, cacheVersion);
+
+  if (cachedUsers) {
+    const totalPages = Math.ceil(cachedUsers.total / limit);
+    res.status(200).json({
+      Data: cachedUsers.users,
+      pageNo: page,
+      remainingPages: Math.max(0, totalPages - page),
+      totalPages
+    });
+    return;
+  }
+
   const users = await User.find()
                 .select("-password")
                 .skip(skip)
@@ -142,6 +164,7 @@ const getAllUser:RequestHandler = asyncHandler(async (req,res) => {
   const total = await User.countDocuments();
   if(users){
     const totalPages = Math.ceil(total / limit);
+    await usercache.saveUsers(page, limit, cacheVersion, { users, total });
     res.status(200)
     .json({
       Data:users,

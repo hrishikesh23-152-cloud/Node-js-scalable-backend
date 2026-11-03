@@ -27,6 +27,7 @@
     "mongoose": "^8.7.3",
     "npm-watch": "^0.13.0",
     "redis": "^6.3.1",
+    "swagger-jsdoc": "^6.3.0",
     "tsc-watch": "^7.2.1",
     "typescript": "^7.0.2",
     "winston": "^3.19.0",
