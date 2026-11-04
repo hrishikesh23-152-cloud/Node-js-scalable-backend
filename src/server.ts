@@ -8,6 +8,7 @@ import { corsUrl, port } from "./config.js"
 import todoRoutes from "./routes/todoRoutes.js"
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js"
 import logger from "./core/logger.js"
+import { openApiSpec, swaggerUiMiddleware } from "./swagger.js"
 
 const PORT = port ?? 4000
 
@@ -28,6 +29,8 @@ app.use((req, res, next) => {
 app.use("/api/users", userRoutes);
 app.use("/api/todo", todoRoutes);
 app.use("/api/todos", todoRoutes);
+app.get("/api-docs.json", (_req, res) => res.json(openApiSpec));
+app.use("/api-docs", swaggerUiMiddleware);
 app.use(notFound)
 app.use(errorHandler)
 
