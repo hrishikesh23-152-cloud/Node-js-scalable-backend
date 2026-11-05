@@ -3,8 +3,8 @@ import {redisConfig} from '../config.js'
 import logger from '../core/logger.js'
 console.log("1. REDIS MODULE LOADED");
 
-const redisUrl = "redis://127.0.0.1:6379"
-  // `redis://:${redisConfig.redis_password}@${redisConfig.redis_host}:${redisConfig.redis_port}`;
+const redisUrl = `redis://:${redisConfig.redis_password}@${redisConfig.redis_host}:${redisConfig.redis_port}`
+  // ;
 
 console.log("2. REDIS CONFIG LOADED", {
   host: redisConfig.redis_host,

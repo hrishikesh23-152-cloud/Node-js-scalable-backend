@@ -1,0 +1,4 @@
+allowBuilds:
+  '@scarf/scarf': false
+  mongodb-memory-server: true
+dangerouslyAllowAllBuilds: true

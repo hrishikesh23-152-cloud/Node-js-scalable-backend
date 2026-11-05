@@ -14,10 +14,10 @@ const createTodo:RequestHandler = asyncHandler(async (req:ProtectedRequest, res:
   }
 
   const userId = req.user?._id || req.user;
-  await todocache.invalidTodos(String(req.user?._id));
-  logger.info("todos deleted from cache..")
+ 
   await Todo.create({ user: userId, title, description })
-  
+   await todocache.invalidTodos(String(req.user?._id));
+  logger.info("todos deleted from cache..")
 
   res.status(201).json({ title, description })
 })
@@ -34,7 +34,7 @@ const getTodos: RequestHandler = asyncHandler(
     const cachedTodos = await todocache.fetchUserTodos(userId);
 
     // 2. Cache hit
-    if (cachedTodos && cachedTodos.length > 0) {
+    if (cachedTodos !== null) {
       logger.info("Successfully fetched todos from cache");
 
       res.status(200).json({
