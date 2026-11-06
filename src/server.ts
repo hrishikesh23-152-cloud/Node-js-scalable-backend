@@ -36,7 +36,7 @@ app.use(errorHandler)
 
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`)
+    console.log(`Server is running on port  ${PORT}`)
     logger.info(`server is running on port ${PORT}`)
   })
 }

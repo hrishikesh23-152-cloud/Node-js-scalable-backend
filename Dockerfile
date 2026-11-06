@@ -10,8 +10,8 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY . .
 
-RUN pnpm run build
+RUN npm run build
 
 EXPOSE 4000
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]
