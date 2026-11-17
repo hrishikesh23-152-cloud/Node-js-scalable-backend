@@ -31,6 +31,9 @@ app.use("/api/todo", todoRoutes);
 app.use("/api/todos", todoRoutes);
 app.get("/api-docs.json", (_req, res) => res.json(openApiSpec));
 app.use("/api-docs", swaggerUiMiddleware);
+app.get("/", (_req, res) => {
+  res.send("Welcome to the API");
+})
 app.use(notFound)
 app.use(errorHandler)
 
